@@ -17,7 +17,8 @@ exports.activate = (context) => {
       options: {
         execArgv: ['--nolazy', '--debug=6004']
       }
-    }
+    },
+    outputChannelName: 'Serpent Language Server'
   }, {
     documentSelector: ['serpent']
   });

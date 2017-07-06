@@ -1,85 +1,70 @@
 'use strict';
 
+const exec = require('child_process').exec;
 const languageServer = require('vscode-languageserver');
 const Files = languageServer.Files;
 
 const connection = languageServer.createConnection(process.stdin, process.stdout);
 const documents = new languageServer.TextDocuments();
 
-const util = require('util');
-const exec = util.promisify(require('child_process').exec);
-
 const RE_LINE = /^(.+?):(\d+):(\d+) ([EW])\d+ (.+)$/;
 
 function matchToDiagnostic(match) {
-  matchProperties = {
+  let item = {
     completeMatch: match[0],
     filepath: match[1],
-    line: parseInt(match[2]),
-    column: parseInt(match[3]),
+    line: parseInt(match[2], 10) - 1,
+    column: parseInt(match[3], 10) - 1,
     severityKey: match[4],
     message: match[5]
   };
 
-  let severity = matchProperties.severityKey === 'W' ?
+  let severity = item.severityKey === 'W' ?
     languageServer.DiagnosticSeverity.Warning :
     languageServer.DiagnosticSeverity.Error;
-
-  // let quote = null;
-
-  // // check for variable name or line in message
-  // if (matchProperties.message.indexOf('"') !== -1) {
-  //   quote = matchProperties.message.match(/\\?"(.*?)\\?"/)[1];
-  // } else if (matchProperties.message.indexOf("'") !== -1) {
-  //   quote = matchProperties.message.match(/'(.*)'/)[1];
-  // }
-
-  let lineNumber = matchProperties.line;
-
-  let colStart = matchProperties.column;
-  let colEnd = matchProperties.column;
-
-  // let colEnd = this._documentText[lineNumber].length;
-  // let documentLine: string = this._documentText[lineNumber];
-
-  // make sure colStart does not including leading whitespace
-  // if (colStart == 0 && documentLine.substr(0, 1).match(/\s/) !== null) {
-  //   colStart = documentLine.length - documentLine.replace(/^\s*/g, "").length;
-  // }
 
   return {
     severity: severity,
     range: {
       start: {
-        line: lineNumber,
-        character: colStart
+        line: item.line,
+        character: item.column
       },
       end: {
-        line: lineNumber,
-        character: colEnd
+        line: item.line,
+        character: item.column
       }
     },
-    message: matchProperties.severityKey + ": " + matchProperties.message
+    message: `${item.severityKey}: ${item.message}`
   };
+}
 
 function serplint(filePath) {
   return new Promise((resolve, reject) => {
-    exec(`serplint "${filePath}"`)
-      .then((err, stdout) => {
-        if (err) {
-          return reject(err);
-        }
+    exec(`serplint "${filePath}"`, (err, stdout) => {
+      connection.console.log(JSON.stringify(err, null, 2));
 
-        const diagnostics = stdout.split(/\n/g).map((line) => {
-          let match = RE_LINE.match(line);
+      // if (err) {
+      //   throw new Error(err);
+      //   return reject(err);
+      // }
+
+      const diagnostics = stdout.split(/\n/g)
+        .map((line) => {
+          if (!line) {
+            return;
+          }
+
+          let match = RE_LINE.exec(line);
 
           if (match) {
             return matchToDiagnostic(match);
           }
-        });
+        })
+        .filter(diagnostic => diagnostic);
 
-        resolve(diagnostics);
-      }).catch(reject);
+      resolve(diagnostics);
+    });
   });
 }
 
@@ -119,6 +104,7 @@ connection.onInitialize(() => {
 
 connection.onDidChangeConfiguration(() => validateAll());
 connection.onDidChangeWatchedFiles(() => validateAll());
+
 documents.onDidChangeContent(event => validate(event.document));
 
 documents.onDidClose(event => connection.sendDiagnostics({
