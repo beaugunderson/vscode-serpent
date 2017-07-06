@@ -1,9 +1,7 @@
 'use strict';
 
+const LanguageClient = require('vscode-languageclient').LanguageClient;
 const path = require('path');
-
-const languageClient = require('vscode-languageclient');
-const LanguageClient = languageClient.LanguageClient;
 
 exports.activate = (context) => {
   const serverModule = path.join(__dirname, 'server.js');
