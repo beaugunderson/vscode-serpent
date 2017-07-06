@@ -40,12 +40,8 @@ function matchToDiagnostic(match) {
 }
 
 function serplint(filePath) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     exec(`serplint "${filePath}"`, (err, stdout) => {
-      if (err) {
-        return reject(err);
-      }
-
       const diagnostics = stdout.split(/\n/g)
         .map((line) => {
           if (!line) {

@@ -1,6 +1,6 @@
 {
   "name": "serpent",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "displayName": "serpent",
   "description": "Serpent language support and linting",
   "publisher": "beaugunderson",
