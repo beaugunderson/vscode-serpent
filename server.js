@@ -2,6 +2,7 @@
 
 const exec = require('child_process').exec;
 const languageServer = require('vscode-languageserver');
+const path = require('path');
 const Files = languageServer.Files;
 
 const connection = languageServer.createConnection(process.stdin, process.stdout);
@@ -40,8 +41,11 @@ function matchToDiagnostic(match) {
 }
 
 function serplint(filePath) {
+  const fileDirectory = path.dirname(filePath);
+  const fileName = path.basename(filePath);
+
   return new Promise((resolve) => {
-    exec(`serplint "${filePath}"`, (err, stdout) => {
+    exec(`serplint "${fileName}"`, {cwd: fileDirectory}, (err, stdout) => {
       const diagnostics = stdout.split(/\n/g)
         .map((line) => {
           if (!line) {
