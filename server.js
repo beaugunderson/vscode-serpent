@@ -42,12 +42,9 @@ function matchToDiagnostic(match) {
 function serplint(filePath) {
   return new Promise((resolve, reject) => {
     exec(`serplint "${filePath}"`, (err, stdout) => {
-      connection.console.log(JSON.stringify(err, null, 2));
-
-      // if (err) {
-      //   throw new Error(err);
-      //   return reject(err);
-      // }
+      if (err) {
+        return reject(err);
+      }
 
       const diagnostics = stdout.split(/\n/g)
         .map((line) => {
@@ -79,12 +76,8 @@ function validate(document) {
       });
     })
     .catch(err => {
-      if (err.reasons) {
-        return err.reasons
-          .forEach(reason => connection.window.showErrorMessage('serplint: ' + reason));
-      }
-
-      connection.window.showErrorMessage(err.stack.replace(/\n/g, ' '));
+      connection.window.showErrorMessage(
+        err + ' ' + err.stack.replace(/\n/g, ' '));
     });
 }
 
@@ -103,8 +96,6 @@ connection.onInitialize(() => {
 });
 
 connection.onDidChangeConfiguration(() => validateAll());
-connection.onDidChangeWatchedFiles(() => validateAll());
-
 documents.onDidChangeContent(event => validate(event.document));
 
 documents.onDidClose(event => connection.sendDiagnostics({
