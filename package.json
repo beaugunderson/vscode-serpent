@@ -49,7 +49,7 @@
     "vscode-languageserver": "^3.3.0"
   },
   "devDependencies": {
-    "eslint": "^4.1.1",
+    "eslint": "^4.18.2",
     "vscode": "^1.1.0"
   }
 }
